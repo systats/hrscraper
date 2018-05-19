@@ -1,0 +1,100 @@
+---
+title: "scraper"
+author: "Simon"
+date: "19 5 2018"
+output: html_document
+---
+
+# Prep 
+
+## Packages
+
+```{r}
+# devtools::install_github("johndharrison/wdman")
+# devtools::install_github("johndharrison/binman")
+# devtools::install_github("ropensci/RSelenium")
+# devtools::install_github("johndharrison/seleniumPipes")
+# devtools::install_github("systats/hrscraper")
+pacman::p_load(dplyr, ggplot2, rvest, xml2, stringr, purrr, RSelenium, wdman, seleniumPipes, hrscraper)
+```
+
+
+## Init Drivers
+
+```{r}
+# port <- sample(4000L:5000L, 1)
+# 
+# pJS <- wdman::phantomjs(
+#   port = port
+# )
+# pJS$process
+
+rD <- RSelenium::rsDriver(verbose = F)
+remDr <- rD$client
+```
+
+
+## Base Url
+
+```{r}
+# base_url <- "https://login.xing.com/"
+# remDr$navigate(base_url)
+#remDr$screenshot()
+```
+
+
+
+# Search
+
+## Login
+
+
+```{r}
+remDr$open()
+post_login(
+  "nomis.roth@gmx.net",
+  "Toshiba32"
+)
+#remDr$screenshot(display = T)
+#remDr$getCurrentUrl()
+```
+
+
+## Stage search query
+
+```{r}
+keywords <- c("tetec")
+tetec_search <- scrape_main(keywords)
+tetec_search %>% glimpse
+# save(tetec_base, file = "tetec_base.Rdata")
+```
+
+
+
+```{r}
+post_login(
+  "msautter1991@gmail.com",
+  "msautter1234"
+)
+```
+
+
+```{r}
+#get_profile(tetec_search$name_id[1])
+get_profile_progress <- tidyMBO::progressively(purrr::safely(get_profile), nrow(tetec_search))
+  
+tetec <- tetec_search %>% 
+  .$name_id %>% 
+  purrr::map(get_profile_progress) %>% 
+  purrr::map("result") %>% 
+  purrr::reduce(bind_rows) %>%
+  mutate(time_stamp = Sys.Date())
+
+tetec <- tetec %>% 
+  left_join(tetec_search)
+
+tetec %>%
+  glimpse
+```
+
+
